@@ -1,4 +1,7 @@
-importScripts("/wiregasm.js");
+// Worker script is in assets/ folder, wiregasm files are at the app root.
+// Use relative paths so the app works when deployed to a subdirectory.
+const _wiregasmBase = "../";
+importScripts(_wiregasmBase + "wiregasm.js");
 
 const fetchBuffer = async (url) => {
   const response = await fetch(url);
@@ -11,8 +14,8 @@ let session = null;
 loadWiregasm({
   locateFile: (path, prefix) => {
     console.log("locateFile", path, prefix);
-    if (path.endsWith(".data")) return "/wiregasm.bmp";
-    if (path.endsWith(".wasm")) return "/wiregasm.wasm";
+    if (path.endsWith(".data")) return _wiregasmBase + "wiregasm.bmp";
+    if (path.endsWith(".wasm")) return _wiregasmBase + "wiregasm.wasm";
     return prefix + path;
   },
 })

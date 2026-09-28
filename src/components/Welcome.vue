@@ -24,6 +24,7 @@ const loadDemo = (event) => {
 
 state.statusText = computed(() => {
   if (state.downloadingExample) return "Please wait: downloading example...";
+  if (manager.loadingFromUrl) return "Please wait: downloading file from URL...";
   if (manager.activeFile) return "Please wait: opening file...";
 
   if (manager.lastFileOpenError) {

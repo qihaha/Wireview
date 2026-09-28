@@ -12,6 +12,12 @@ import Welcome from "./components/Welcome.vue";
 import FindFrameBar from "./components/FindFrameBar.vue";
 onMounted(() => {
   manager.initialize();
+
+  const params = new URLSearchParams(window.location.search);
+  const fileUrl = params.get("file");
+  if (fileUrl) {
+    manager.openFileFromUrl(fileUrl);
+  }
 });
 
 onBeforeUnmount(() => {

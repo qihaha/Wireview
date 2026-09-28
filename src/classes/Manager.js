@@ -34,6 +34,7 @@ class Manager {
       filteredFramesRequest: null,
       activeFile: null,
       lastFileOpenError: false,
+      loadingFromUrl: false,
     });
     this.#state.fontSize = computed(() =>
       calculateFontSize(this.#state.rowHeight)
@@ -189,6 +190,10 @@ class Manager {
     return this.#shallowState.lastFileOpenError;
   }
 
+  get loadingFromUrl() {
+    return this.#shallowState.loadingFromUrl;
+  }
+
   get canOpenFile() {
     return this.#state.canOpenFile;
   }
@@ -259,6 +264,53 @@ class Manager {
 
     this.#shallowState.sessionInfo = result.summary;
     this.#state.activeFrameIndex = result.summary.packet_count ? 0 : null;
+  }
+
+  async openFileFromUrl(url) {
+    // Wait for the WASM bridge to be ready
+    if (!this.canOpenFile) {
+      await new Promise((resolve) => {
+        const stop = watch(
+          () => this.canOpenFile,
+          (val) => {
+            if (val) {
+              stop();
+              resolve();
+            }
+          }
+        );
+      });
+    }
+
+    // Extract filename from URL
+    let filename;
+    try {
+      const pathname = new URL(url, window.location.href).pathname;
+      filename = decodeURIComponent(pathname.split("/").pop()) || "download.pcap";
+    } catch {
+      filename = "download.pcap";
+    }
+
+    this.#shallowState.loadingFromUrl = true;
+    this.#shallowState.lastFileOpenError = false;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const buffer = await response.arrayBuffer();
+      const file = new File([buffer], filename);
+      await this.openFile(file);
+    } catch (error) {
+      this.#shallowState.lastFileOpenError = {
+        code: -1,
+        error: `Failed to download file: ${error.message}`,
+        filename,
+      };
+    } finally {
+      this.#shallowState.loadingFromUrl = false;
+    }
   }
 
   async closeFile() {
